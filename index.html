@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -93,6 +91,11 @@
     <div id="score">Puntuación: 0 / 9</div>
   </div>
 
+  <div id="ranking" style="margin-top: 20px; width: 600px;">
+    <h3>🏆 Mejores Puntajes</h3>
+    <ul id="ranking-list" style="list-style: none; padding: 0;"></ul>
+  </div>
+
   <script>
     let items = [], originalItems = [];
     let targets = [];
@@ -100,6 +103,9 @@
     let offsetX = 0, offsetY = 0;
     let feedbackMessage = '';
     let puntaje = 0;
+    let playerName = "";
+
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqGaRSUloRZV7ZV4Dxppqwso_ZoziiKvZkjA06TeCcQxzY9QNrLnELvrOHZ7x7KrVJ/exec; // Reemplaza esto con tu URL del Apps Script"
 
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -149,6 +155,12 @@
       textAlign(CENTER, CENTER);
       textSize(14);
       setupJuego();
+      pedirNombre();
+    }
+
+    function pedirNombre() {
+      playerName = prompt("Por favor, ingresa tu nombre:", "Jugador");
+      if (!playerName) playerName = "Sin nombre";
     }
 
     function draw() {
@@ -260,7 +272,36 @@
       } else {
         feedbackMessage = '💪 Buen intento. Algunos elementos no están en la categoría correcta.';
       }
+
       updateScore();
+      guardarResultadoEnSheets(playerName, puntaje);
+      mostrarRanking();
+    }
+
+    function guardarResultadoEnSheets(nombre, puntaje) {
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nombre, puntaje })
+      });
+    }
+
+    function mostrarRanking() {
+      fetch(SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => {
+          const lista = document.getElementById("ranking-list");
+          lista.innerHTML = "";
+          data.slice(0, 5).forEach(jugador => {
+            const li = document.createElement("li");
+            li.textContent = `${jugador.nombre}: ${jugador.puntaje} puntos`;
+            lista.appendChild(li);
+          });
+        })
+        .catch(err => console.error("Error al obtener el ranking:", err));
     }
 
     function reiniciarJuego() {
